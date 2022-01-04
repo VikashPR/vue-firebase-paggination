@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+
+<body>
+    <div id="app">
+        <v-app>
+            <v-main>
+                <v-container>
+                    <v-row>
+                        <v-col cols="12" md="4" v-for="(item, index) in entradas" :key="index">
+                            <v-card>
+                                <v-card-title>{{item.title}}</v-card-title>
+                                <v-card-subtitle>
+                                    {{item.id}}
+                                </v-card-subtitle>
+                                <v-card-text>{{item.body}}</v-card-text>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </v-container>
+                <v-container>
+                    <v-btn @click="siguiente" :disabled="desactivar">Más artículos...</v-btn>
+                </v-container>
+            </v-main>
+        </v-app>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOZoc1UrrQ-eFsmicBSgp3eTsG_G5ujzI",
+            authDomain: "blog-12ee7.firebaseapp.com",
+            projectId: "blog-12ee7",
+            storageBucket: "blog-12ee7.appspot.com",
+            messagingSenderId: "643679268235",
+            appId: "1:643679268235:web:3252475424009844b3d38e"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+    </script>
+    <script>
+        new Vue({
+            el: '#app',
+            vuetify: new Vuetify(),
+            data: {
+                entradas: [],
+                last: null,
+                desactivar: false
+            },
+            methods: {
+                fetchData() {
+                    db.collection("blog")
+                        .limit(2)
+                        .orderBy("id")
+                        .get()
+                        .then(querySnapshot => {
+                            this.last = querySnapshot.docs[querySnapshot.docs.length - 1];
+                            querySnapshot.forEach(doc => {
+                                this.entradas.push(doc.data());
+                                console.log(doc.data());
+                            });
+                        });
+                },
+                siguiente() {
+                    db.collection("blog")
+                        .limit(2)
+                        .orderBy("id")
+                        .startAfter(this.last)
+                        .get()
+                        .then(querySnapshot => {
+                            this.last = querySnapshot.docs[querySnapshot.docs.length - 1];
+                            querySnapshot.forEach(doc => {
+                                this.entradas.push(doc.data());
+                            });
+                        })
+                        .then(() => {
+                            db.collection("blog")
+                                .limit(2)
+                                .orderBy("id")
+                                .startAfter(this.last)
+                                .get()
+                                .then(query => {
+                                    if (query.empty) {
+                                        this.desactivar = true;
+                                    }
+                                });
+                        });
+                }
+            },
+            created() {
+                this.fetchData()
+            }
+        })
+    </script>
+</body>
+
+</html>
